@@ -699,6 +699,31 @@ test("detect bad_pre_tags flaws", () => {
   expect(flaw.column).toBe(50);
 });
 
+test("detect prefer_macro flaws", () => {
+  expect(true).toBeTruthy();
+  /*
+  const builtFolder = path.join(
+    buildRoot,
+    "en-us",
+    "docs",
+    "learn",
+    "some_code"
+  );
+  expect(fs.existsSync(builtFolder)).toBeTruthy();
+  const jsonFile = path.join(builtFolder, "index.json");
+  const { doc } = JSON.parse(fs.readFileSync(jsonFile));
+  expect(doc.flaws.pre_with_html.length).toBe(1);
+  const flaw = doc.flaws.pre_with_html[0];
+  expect(flaw.explanation).toBe("<pre><code>CODE can be just <pre>CODE");
+  expect(flaw.id).toBeTruthy();
+  expect(flaw.fixable).toBe(true);
+  expect(flaw.html).toBeTruthy();
+  expect(flaw.suggestion).toBeTruthy();
+  expect(flaw.line).toBe(29);
+  expect(flaw.column).toBe(50);
+  */
+});
+
 test("image flaws kitchen sink", () => {
   const builtFolder = path.join(buildRoot, "en-us", "docs", "web", "images");
   const jsonFile = path.join(builtFolder, "index.json");

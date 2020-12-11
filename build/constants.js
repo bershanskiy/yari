@@ -29,6 +29,7 @@ const VALID_FLAW_CHECKS = new Set([
   "images",
   "image_widths",
   "bad_pre_tags",
+  "prefer_macro",
   "sectioning",
 ]);
 

@@ -17,6 +17,7 @@ import {
   GenericFlaw,
   BadBCDQueryFlaw,
   BadPreTagFlaw,
+  PreferMacroFlaw,
   SectioningFlaw,
 } from "../types";
 import "./flaws.scss";
@@ -221,6 +222,10 @@ function Flaws({ doc, flaws }: { doc: Doc; flaws: FlawCount[] }) {
                 sourceFolder={doc.source.folder}
                 flaws={doc.flaws.bad_pre_tags}
               />
+            );
+          case "prefer_macro":
+            return (
+              <PreferMacro key="prefer_macro" flaws={doc.flaws.prefer_macro} />
             );
           case "macros":
             return (
@@ -480,6 +485,12 @@ function Sectioning({ flaws }: { flaws: SectioningFlaw[] }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+function PreferMacro({ flaws }: { flaws: PreferMacroFlaw[] }) {
+  return (
+    <div className="flaw flaw__prefer_macro">Prefer Macro Flaws go here!</div>
   );
 }
 

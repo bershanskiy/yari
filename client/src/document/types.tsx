@@ -51,6 +51,8 @@ export interface BadPreTagFlaw extends GenericFlaw {
   type: BadPreTagType;
 }
 
+export interface PreferMacroFlaw extends GenericFlaw {}
+
 export interface MacroErrorMessage extends GenericFlaw {
   name: string;
   error: {
@@ -74,6 +76,7 @@ type Flaws = {
   bad_bcd_links: BadBCDLinkFlaw[];
   images: ImageReferenceFlaw[];
   bad_pre_tags: BadPreTagFlaw[];
+  prefer_macro: PreferMacroFlaw[];
   sectioning: SectioningFlaw[];
   image_widths: ImageWidthFlaw[];
 };

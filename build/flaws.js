@@ -11,7 +11,7 @@ const imageminSvgo = require("imagemin-svgo");
 
 const { Document, Redirect, Image } = require("../content");
 const { FLAW_LEVELS } = require("./constants");
-const { packageBCD } = require("./resolve-bcd");
+const { packageBCD, reverseBCD } = require("./resolve-bcd");
 const {
   findMatchesInText,
   replaceMatchesInText,
@@ -31,6 +31,13 @@ function injectFlaws(doc, $, options, { rawContent }) {
   injectBadBCDQueriesFlaws(options.flawLevels.get("bad_bcd_queries"), doc, $);
 
   injectPreTagFlaws(options.flawLevels.get("bad_pre_tags"), doc, $, rawContent);
+
+  injectPreferMacroFlaws(
+    options.flawLevels.get("prefer_macro"),
+    doc,
+    $,
+    rawContent
+  );
 }
 
 function injectSectionFlaws(doc, flaws, options) {
@@ -355,6 +362,80 @@ function injectPreTagFlaws(level, doc, $, rawContent) {
   }
 }
 
+// Sometimes contributors use combination of <code> and <a> tags
+// to create concoction equivalent to a macro call. It's hard to
+// read and prone to copy-paste errors.
+// Specifically, look for:
+// <code><a href="...">API</a></code>
+// <a href="..."><code>API</code></a>
+// and replace it with
+function injectPreferMacroFlaws(level, doc, $, rawContent) {
+  if (level === FLAW_LEVELS.IGNORE) return;
+
+  function createMacro(href, text) {
+    const macros = {
+      "api.": "DOMxRef",
+      "html.elements.": "HTMLElement",
+      "http.headers.": "HTTPHeader",
+      "http.methods.": "HTTPMethod",
+      "webextensions.api.": "webextAPIref",
+    };
+
+    href = href.replace("/en-US/", "https://developer.mozilla.org/");
+    const key = reverseBCD(href);
+    if (!key) return;
+
+    for (const prefix in macros) {
+      if (key.startsWith(prefix)) {
+        const macroname = macros[prefix];
+        const arg1 = key.replace(prefix, "");
+        return `{{${macroname}("${arg1}", "${text}")}}`;
+      }
+    }
+  }
+
+  function lookForEquivalentMacro(text, href, element) {
+    const macro = createMacro(href, text);
+    if (!macro) return;
+    if (!("prefer_macro" in doc.flaws)) {
+      doc.flaws.prefer_macro = [];
+    }
+    const flaw = {
+      //      id: string;
+      explanation: "Prefer macro over HTML",
+      suggestion: macro,
+      fixable: true,
+      //fixed?: true;
+    };
+    doc.flaws.prefer_macro.push(flaw);
+    console.error(macro, text);
+  }
+
+  $("code > a[href]").each((i, element) => {
+    const a = $(element);
+    const text = a.text();
+    const href = a.attr("href");
+    lookForEquivalentMacro(text, href, element);
+  });
+
+  $("a[href] > code").each((i, element) => {
+    const code = $(element);
+    const text = code.text();
+    const href = code.parent().attr("href");
+    lookForEquivalentMacro(text, href, element);
+  });
+
+  if (
+    level === FLAW_LEVELS.ERROR &&
+    doc.flaws.prefer_macro &&
+    doc.flaws.prefer_macro.length
+  ) {
+    throw new Error(
+      `prefer_macro flaws: ${doc.flaws.prefer_macro.map(JSON.stringify)}`
+    );
+  }
+}
+
 async function fixFixableFlaws(doc, options, document) {
   if (!options.fixFlaws || document.isArchive) return;
 
@@ -441,6 +522,27 @@ async function fixFixableFlaws(doc, options, document) {
       return `https://mdn.mozillademos.org${url}`;
     }
     return url;
+  }
+
+  // Any 'prefer_macro' with suggestion...
+  for (const flaw of doc.flaws.prefer_macro || []) {
+    if (!flaw.suggestion || !flaw.fixable) {
+      continue;
+    }
+
+    // TODO...
+    /*
+    if (!newRawHTML.includes(flaw.html)) {
+      throw new Error(`rawHTML doesn't contain flaw HTML (${flaw.html})`);
+    }
+    // It's not feasible to pin point exactly which `<pre>` tag this
+    // refers to, so do the same query we use when we find the
+    // flaw, but this time actually make the mutation.
+    newRawHTML = newRawHTML.replace(flaw.html, flaw.suggestion);
+    if (loud) {
+      console.log(chalk.grey(`${phrasing} (${flaw.id}) pre_with_html`));
+    }
+    */
   }
 
   // Any 'images' flaws with a suggestion or external image...
